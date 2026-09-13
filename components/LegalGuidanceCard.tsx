@@ -63,11 +63,11 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm text-card-foreground overflow-hidden max-w-full">
+    <div className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200 text-card-foreground overflow-hidden max-w-full">
       {/* Card Header & Tabs */}
       <div className="border-b border-border bg-muted/30 px-3 py-2.5 sm:px-6 sm:py-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0" />
+          <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0 animate-pulse" />
           <span className="font-bold text-xs sm:text-sm text-foreground uppercase tracking-wide">
             {domainName}
           </span>
@@ -77,10 +77,10 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
         <div className="flex flex-wrap items-center gap-1 bg-background p-1 rounded-lg border border-border text-xs">
           <button
             onClick={() => setActiveTab("guidance")}
-            className={`px-2.5 py-1 rounded-md font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            className={`px-2.5 py-1 rounded-md font-medium transition-all duration-150 cursor-pointer hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
               activeTab === "guidance"
                 ? "bg-indigo-600 text-white shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             {language === "hi" ? "मार्गदर्शन" : "Guidance"}
@@ -89,10 +89,10 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
           {draftTemplate && (
             <button
               onClick={() => setActiveTab("draft")}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-all duration-150 cursor-pointer hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 activeTab === "draft"
                   ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
               <FileText className="w-3 h-3" />
@@ -103,10 +103,10 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
           {portals.length > 0 && (
             <button
               onClick={() => setActiveTab("portals")}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-all duration-150 cursor-pointer hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 activeTab === "portals"
                   ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
             >
               {language === "hi" ? "पोर्टल" : "Portals"}
@@ -124,7 +124,7 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
           {sections.map((sec, i) => (
             <span
               key={i}
-              className="px-2 py-0.5 rounded-md bg-white dark:bg-card border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300 font-mono text-[11px] break-words"
+              className="px-2 py-0.5 rounded-md bg-white dark:bg-card border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300 font-mono text-[11px] break-words hover:border-indigo-400 transition-colors cursor-default"
             >
               {sec}
             </span>
@@ -133,17 +133,18 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
       )}
 
       {/* Main Tab Content */}
-      <div className="p-3 sm:p-6">
+      <div className="p-3.5 sm:p-6">
         {activeTab === "guidance" && (
           <div>
             <div className="flex justify-end mb-2">
               <button
                 onClick={handleCopyContent}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-all duration-150 p-1.5 rounded-lg hover:bg-muted cursor-pointer hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 aria-label="Copy guidance to clipboard"
+                title="Copy full legal guidance to clipboard"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? "Copied" : "Copy"}</span>
+                <span className="font-medium">{copied ? "Copied" : "Copy"}</span>
               </button>
             </div>
 
@@ -159,7 +160,7 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
 
         {activeTab === "draft" && draftTemplate && (
           <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/50">
               <div>
                 <h4 className="font-bold text-xs sm:text-sm text-foreground">{draftTemplate.title}</h4>
                 <p className="text-[11px] text-muted-foreground">
@@ -172,22 +173,24 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={handleCopyDraft}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-card text-xs font-medium hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium hover:bg-accent hover:scale-[1.03] active:scale-[0.97] transition-all duration-150 cursor-pointer shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  title="Copy notice draft template"
                 >
-                  {draftCopied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                  <span>{draftCopied ? "Copied" : "Copy"}</span>
+                  {draftCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{draftCopied ? "Copied" : "Copy Template"}</span>
                 </button>
                 <button
                   onClick={handleDownloadDraft}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 hover:scale-[1.03] active:scale-[0.97] transition-all duration-150 cursor-pointer shadow-sm shadow-indigo-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  title="Download notice as plain text (.txt)"
                 >
-                  <Download className="w-3 h-3" />
-                  <span>Download</span>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download .txt</span>
                 </button>
               </div>
             </div>
 
-            <pre className="p-3 sm:p-4 rounded-lg bg-muted/60 border border-border text-[11px] sm:text-xs font-mono whitespace-pre-wrap overflow-x-auto text-foreground leading-relaxed">
+            <pre className="p-3.5 sm:p-4 rounded-lg bg-muted/60 border border-border text-[11px] sm:text-xs font-mono whitespace-pre-wrap break-words max-w-full overflow-x-auto text-foreground leading-relaxed select-all">
               {draftTemplate.templateText}
             </pre>
           </div>
@@ -201,13 +204,13 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
                 href={portal.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group p-3 sm:p-4 rounded-lg border border-border bg-muted/20 hover:border-indigo-500/50 hover:bg-muted/40 transition-all block focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                className="group p-3 sm:p-4 rounded-lg border border-border bg-muted/20 hover:border-indigo-500/50 hover:bg-muted/50 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-200 block cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <h5 className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                  <h5 className="font-semibold text-xs sm:text-sm text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {portal.name}
                   </h5>
-                  <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-indigo-600" />
+                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
                 </div>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">{portal.description}</p>
                 <span className="inline-block mt-2 font-mono text-[10px] sm:text-[11px] text-indigo-600 dark:text-indigo-400 break-all">
@@ -220,7 +223,7 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
       </div>
 
       {/* Mandatory Statutory Disclaimer Banner */}
-      <div className="bg-muted/40 border-t border-border px-3 sm:px-6 py-2.5 text-[11px] sm:text-xs text-muted-foreground flex items-start gap-2">
+      <div className="bg-muted/40 border-t border-border px-3.5 sm:px-6 py-2.5 text-[11px] sm:text-xs text-muted-foreground flex items-start gap-2">
         <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 shrink-0 mt-0.5" />
         <div>
           <span className="font-semibold text-foreground">Informational Advisory Disclaimer:</span>{" "}

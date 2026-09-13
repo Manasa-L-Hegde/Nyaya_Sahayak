@@ -37,7 +37,7 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
   };
 
   return (
-    <div className="my-3 sm:my-4 rounded-xl border border-indigo-500/30 bg-card p-3 sm:p-5 shadow-sm text-card-foreground max-w-full overflow-hidden">
+    <div className="my-3 sm:my-4 rounded-xl border border-indigo-500/30 bg-card p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200 text-card-foreground max-w-full overflow-hidden">
       <div className="flex items-start gap-2.5 mb-3">
         <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5">
           <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
@@ -62,7 +62,7 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
           return (
             <div
               key={q.id}
-              className="p-3 rounded-lg border border-border bg-muted/40 transition-colors max-w-full overflow-hidden"
+              className="p-3 rounded-lg border border-border bg-muted/40 hover:bg-muted/60 transition-colors duration-200 max-w-full overflow-hidden"
             >
               <div className="flex flex-wrap items-center justify-between gap-1 mb-1.5">
                 <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
@@ -87,10 +87,10 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
                       type="button"
                       disabled={disabled}
                       onClick={() => handleSelectOption(q.id, opt)}
-                      className={`text-xs px-2.5 py-1.5 rounded-lg font-medium border transition-all text-left break-words max-w-full ${
+                      className={`text-xs px-2.5 py-1.5 rounded-lg font-medium border transition-all duration-150 text-left break-words max-w-full cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
                         isSelected
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                          : "bg-background text-foreground border-border hover:border-indigo-400/50 hover:bg-accent"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20"
+                          : "bg-background text-foreground border-border hover:border-indigo-400/60 hover:bg-accent"
                       } focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
                     >
                       {opt}
@@ -107,7 +107,7 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
                   disabled={disabled}
                   value={customInputs[q.id] || ""}
                   onChange={(e) => handleCustomChange(q.id, e.target.value)}
-                  className="w-full text-xs px-3 py-1.5 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full text-xs px-3 py-1.5 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150"
                 />
               </div>
             </div>
@@ -115,14 +115,14 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
         })}
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
-          <span className="text-[11px] text-muted-foreground text-center sm:text-left">
+          <span className="text-[11px] text-muted-foreground text-center sm:text-left font-medium">
             {Object.keys(answers).length} of {questions.length} answered
           </span>
 
           <button
             type="submit"
             disabled={disabled || Object.keys(answers).length === 0}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm shadow-indigo-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-150 shadow-sm shadow-indigo-600/20 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             <span>{language === "hi" ? "कानूनी सलाह प्राप्त करें" : "Generate Legal Guidance"}</span>
             <ArrowRight className="w-3.5 h-3.5" />

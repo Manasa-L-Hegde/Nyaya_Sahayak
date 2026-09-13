@@ -244,7 +244,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 );
               }
             } catch (e) {
-              // Non-fatal parse issue on chunk boundary
+              // Non-fatal chunk parsing boundary
             }
           }
         }
@@ -295,9 +295,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {screenReaderAnnouncement}
       </div>
 
-      {/* Unmistakable Simulator Notice Banner (when key is missing in local dev) */}
+      {/* Simulator Notice Banner */}
       {!geminiConnected && (
-        <div className="my-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between gap-2 shrink-0">
+        <div className="my-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between gap-2 shrink-0 shadow-sm">
           <div className="flex items-center gap-2">
             <Info className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
@@ -307,7 +307,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Emergency SOS Banner if triggered manually from Navbar */}
+      {/* Emergency SOS Banner */}
       {sosTriggered && (
         <EmergencyBanner
           language={language}
@@ -353,7 +353,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 )}
 
                 <div
-                  className={`max-w-[92%] sm:max-w-[85%] rounded-2xl p-3 sm:p-4 shadow-sm text-xs sm:text-sm ${
+                  className={`max-w-[90%] sm:max-w-[80%] md:max-w-[75%] rounded-2xl p-3 sm:p-4 shadow-sm text-xs sm:text-sm ${
                     msg.role === "user"
                       ? "bg-indigo-600 text-white rounded-br-none"
                       : "bg-card border border-border text-card-foreground rounded-bl-none"
@@ -393,16 +393,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       isStreaming={msg.isStreaming}
                     />
                   ) : msg.type === "error" ? (
-                    <div className="p-2 sm:p-3 rounded-xl border border-rose-500/30 bg-rose-500/5 text-rose-700 dark:text-rose-400">
-                      <div className="flex items-center gap-1.5 font-semibold text-xs sm:text-sm mb-1">
+                    <div className="p-3 sm:p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 text-rose-700 dark:text-rose-400">
+                      <div className="flex items-center gap-1.5 font-semibold text-xs sm:text-sm mb-1.5">
                         <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                         <span>Connection / Assistant Notice</span>
                       </div>
-                      <p className="text-xs">{msg.content}</p>
+                      <p className="text-xs leading-relaxed">{msg.content}</p>
                       {msg.lastUserQuery && (
                         <button
                           onClick={() => handleSendMessage(msg.lastUserQuery)}
-                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 hover:scale-[1.03] active:scale-[0.97] transition-all duration-150 cursor-pointer shadow-sm shadow-rose-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
                         >
                           <RefreshCw className="w-3 h-3" />
                           <span>Try Again</span>
@@ -446,13 +446,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Bar */}
-      <div className="pt-1.5 pb-3 sm:pb-4 bg-background shrink-0">
+      <div className="sticky bottom-0 pt-1.5 pb-3 sm:pb-4 bg-background/95 backdrop-blur shrink-0 border-t border-border/40">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSendMessage();
           }}
-          className="relative flex items-center rounded-2xl border border-border bg-card shadow-sm p-1.5 sm:p-2 focus-within:ring-2 focus-within:ring-indigo-500 transition-all"
+          className="relative flex items-center rounded-2xl border border-border bg-card shadow-sm p-1.5 sm:p-2 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all duration-200"
         >
           <textarea
             ref={inputRef}
@@ -470,7 +470,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 ? "अपनी कानूनी समस्या लिखें (उदा. मकान मालिक, साइबर फ्रॉड)..."
                 : "Describe your legal issue (e.g. landlord eviction, cyber fraud, defective goods)..."
             }
-            className="flex-1 resize-none bg-transparent px-2 sm:px-3 py-1 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none max-h-28"
+            className="flex-1 resize-none bg-transparent px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none max-h-28"
             disabled={isLoading}
             aria-label="Legal issue description"
           />
@@ -480,7 +480,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <button
                 type="button"
                 onClick={handleClearChat}
-                className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 title="Reset Conversation"
                 aria-label="Reset Conversation"
               >
@@ -491,8 +491,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="p-1.5 sm:p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shadow-indigo-600/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-150 shadow-sm shadow-indigo-600/30 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               aria-label="Send query"
+              title="Send legal issue query"
             >
               <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>

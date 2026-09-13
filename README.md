@@ -125,7 +125,7 @@ cp .env.example .env.local
 ```bash
 npm run test
 ```
-*All 18 unit tests cover: domain classification across 8+ domains, urgent safety branch helpline surfacing, prompt-injection defense, and out-of-scope query redirection.*
+*All 22 unit tests cover: domain classification across 8+ domains, urgent safety branch helpline surfacing, prompt-injection defense, rate limiting, and out-of-scope query redirection.*
 
 ### 4. Run Development Server
 ```bash
