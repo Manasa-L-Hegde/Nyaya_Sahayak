@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   FileDown,
 } from "lucide-react";
-import jsPDF from "jspdf";
 
 interface Portal {
   name: string;
@@ -99,10 +98,11 @@ export const LegalGuidanceCard: React.FC<LegalGuidanceCardProps> = ({
     document.body.removeChild(element);
   };
 
-  // Generate clean, printable PDF Case Summary via jsPDF
-  const handleDownloadPdf = () => {
+  // Generate clean, printable PDF Case Summary via dynamic jsPDF
+  const handleDownloadPdf = async () => {
     try {
       setIsGeneratingPdf(true);
+      const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
