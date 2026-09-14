@@ -68,31 +68,92 @@ Access to formal legal justice in India is constrained by three critical barrier
 
 ```mermaid
 flowchart TD
-    User([User Grievance: Text / 📎 Document Upload]) --> Security[Input Sanitization & Injection Defense]
+    %% Subgraph 1: User Input & Multimodal Ingestion
+    subgraph Ingestion ["📥 1. Input & Multimodal Ingestion"]
+        User["👤 Citizen Grievance (Text / Audio)"]
+        UploadDoc["📎 Notice / Agreement Upload (JPG/PNG/PDF)"]
+        Security["🛡️ Security Shield (Injection Defense & Sanitization)"]
+        DocVision["👁️ Native Gemini Multimodal Vision\nExtracts: Notice Period, Dates, Amounts, Parties"]
+        DocReview["📝 Fact Review & 'Edit if Wrong' Modal"]
+    end
+
+    %% Subgraph 2: Safety & Triage
+    subgraph TriagePipeline ["🚨 2. Instant Safety & Domain Triage"]
+        SafetyCheck{"Physical Danger or\nUrgent Cyber Fraud?"}
+        EmergencyAlert["🆘 PRIORITY EMERGENCY BANNER\nPolice 112 • Women 181/1091 • Cyber 1930"]
+        DomainRouter["⚖️ Statutory Domain Classifier\nTenancy • Consumer • Cyber • Domestic • Labour • RTI"]
+        OutOfScope["🧭 Graceful Boundary Guidance\nOut-of-Scope Redirection"]
+    end
+
+    %% Subgraph 3: Clarification Engine
+    subgraph ContextEngine ["❓ 3. Contextual Clarification Engine"]
+        FactCheck{"Are Crucial Facts Missing?\nState/UT, Written Lease, Prior FIR"}
+        ProgressStepper["⚡ Animated Stepper & Progress Bar\n(Framer Motion: 0% → 33% → 67% → 100%)"]
+        ResolvedContext["✅ Context-Enriched Legal Query"]
+    end
+
+    %% Subgraph 4: Green AI Micro-Index
+    subgraph GreenAI ["🌱 4. Green AI Statutory Micro-Index"]
+        MicroIndex["⚡ In-Memory Statutory Retrieval\n(<2ms Latency • Zero Idle Cloud-DB Wattage)"]
+        Sections["📜 Targeted Statutory Section Injection\n(~1,850 Tokens Saved per Query)"]
+    end
+
+    %% Subgraph 5: Google Gemini 3.6 Flash & Legal Delivery
+    subgraph GenAI ["🤖 5. Google Gemini 3.6 Flash & Delivery"]
+        GeminiCore["🔮 Google Gemini 3.6 Flash Engine\nReal-time SSE Token Streaming with Blinking Cursor ▋"]
+        GuidanceCard["📜 Structured Legal Guidance Card\n(Statutory Rights • Procedural Roadmap • Portals)"]
+        SuccessAnim["🎉 Spring Celebratory Badge\n'Guidance Complete • Actionable Roadmap Ready'"]
+        
+        subgraph Outcomes ["🎯 Actionable Citizen Outcomes"]
+            PDF["📄 Case Summary PDF Export (jsPDF)"]
+            Maps["📍 Find Legal Aid Near You (Google Maps SLSA/DLSA)"]
+            Draft["📝 Copy & Download Formal Notice Draft (.txt)"]
+            HelplineCall["📞 One-Tap Toll-Free Legal Aid Call (NALSA 15100)"]
+        end
+    end
+
+    %% Connecting Flow
+    User --> Security
+    UploadDoc --> DocVision
+    DocVision --> DocReview
+    DocReview --> Security
     
-    Security --> DocCheck{Is Document Attached?}
-    DocCheck -->|Yes| MultimodalAI[Gemini 3.6 Flash Multimodal Analysis\nExtracts Dates, Amounts, Notice Period]
-    MultimodalAI --> DocModal[Document Review & 'Edit if wrong' Modal]
-    DocModal --> Triage
-    DocCheck -->|No| Triage[Stage 1: Safety & Emergency Triage]
+    Security --> SafetyCheck
+    SafetyCheck -->|Critical Danger / Cyber Scam| EmergencyAlert
+    SafetyCheck -->|Non-Legal Query| OutOfScope
+    SafetyCheck -->|Legal Dispute| DomainRouter
     
-    Triage -->|Critical Violence / Domestic Abuse| EmergencyBanner[PRIORITY HELPLINE BANNER: 112, 181, 1091, 15100, 1930]
-    Triage -->|Non-Legal Query e.g. Weather| OutOfScope[Graceful Redirection & Boundary Guidance]
-    Triage -->|Valid Legal Grievance| Classifier[Stage 2: Domain Classification]
+    DomainRouter --> FactCheck
+    FactCheck -->|Missing Jurisdiction / Contract| ProgressStepper
+    ProgressStepper --> ResolvedContext
+    FactCheck -->|Complete Facts| ResolvedContext
+    EmergencyAlert --> ResolvedContext
+    
+    ResolvedContext --> MicroIndex
+    MicroIndex --> Sections
+    Sections --> GeminiCore
+    
+    GeminiCore --> GuidanceCard
+    GuidanceCard --> SuccessAnim
+    SuccessAnim --> PDF
+    SuccessAnim --> Maps
+    SuccessAnim --> Draft
+    SuccessAnim --> HelplineCall
 
-    Classifier --> MissingContextCheck{Are Critical Legal Facts Missing?\nState/UT, Agreement, Prior FIR, Timelines}
-    MissingContextCheck -->|Yes| ClarificationCard[Stage 3: Animated 1-3 Question Stepper\nFramer Motion Progress Bar]
-    ClarificationCard --> UserAnswers[User Submits Clarified Context]
-    UserAnswers --> GreenAIRAG
+    %% Styling Classes
+    classDef primary fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#ffffff;
+    classDef emergency fill:#881337,stroke:#f43f5e,stroke-width:2px,color:#ffffff;
+    classDef green fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ffffff;
+    classDef gemini fill:#172554,stroke:#3b82f6,stroke-width:2px,color:#ffffff;
+    classDef action fill:#312e81,stroke:#818cf8,stroke-width:2px,color:#ffffff;
+    classDef decision fill:#581c87,stroke:#c084fc,stroke-width:2px,color:#ffffff;
 
-    MissingContextCheck -->|No| GreenAIRAG[Stage 4: Green AI Knowledge Retrieval\nSub-2ms In-Memory Micro-Index]
-    EmergencyBanner --> GreenAIRAG
-
-    GreenAIRAG --> GeminiStream[Stage 5: Google Gemini 3.6 Flash Streaming]
-    GeminiStream --> GuidanceCard[Structured Legal Guidance Card]
-    GuidanceCard --> Action1[📄 Download Case Summary PDF]
-    GuidanceCard --> Action2[📍 Find Legal Aid Near You on Maps]
-    GuidanceCard --> Action3[📝 Copy Formal Notice Draft Template]
+    class User,UploadDoc,Security,DocReview primary;
+    class EmergencyAlert emergency;
+    class MicroIndex,Sections green;
+    class GeminiCore,DocVision gemini;
+    class PDF,Maps,Draft,HelplineCall,SuccessAnim,GuidanceCard action;
+    class SafetyCheck,FactCheck,DomainRouter decision;
 ```
 
 ---
