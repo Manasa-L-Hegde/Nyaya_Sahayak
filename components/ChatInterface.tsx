@@ -53,6 +53,7 @@ interface ChatInterfaceProps {
   onDismissSOS: () => void;
   onUpdateGreenAIStats: (stats: { retrievalLatencyMs: number; tokensSavedEstimate: number }) => void;
   geminiConnected?: boolean;
+  onLiveConnectionConfirmed?: (live: boolean) => void;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -61,6 +62,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onDismissSOS,
   onUpdateGreenAIStats,
   geminiConnected = false,
+  onLiveConnectionConfirmed,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -321,6 +323,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               const parsed = JSON.parse(dataStr);
 
               if (parsed.type === "METADATA") {
+                if (parsed.geminiLive && onLiveConnectionConfirmed) {
+                  onLiveConnectionConfirmed(true);
+                }
                 if (parsed.greenAIMetrics) {
                   onUpdateGreenAIStats({
                     retrievalLatencyMs: parsed.greenAIMetrics.retrievalLatencyMs,

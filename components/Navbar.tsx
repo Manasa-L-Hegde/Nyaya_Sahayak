@@ -7,10 +7,11 @@ interface NavbarProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   language: "en" | "hi";
-  setLanguage: (val: "en" | "hi") => void;
+  setLanguage: (lang: "en" | "hi") => void;
   onOpenGreenAI: () => void;
   onTriggerSOS: () => void;
-  geminiConnected: boolean;
+  geminiConnected?: boolean;
+  modelName?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -20,13 +21,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   setLanguage,
   onOpenGreenAI,
   onTriggerSOS,
-  geminiConnected,
+  geminiConnected = false,
+  modelName,
 }) => {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1.5">
-        {/* Brand & Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+        {/* Left branding */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-800 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0 transition-transform duration-200 hover:scale-105 cursor-pointer">
             <Scale className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
           </div>
@@ -58,8 +60,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
             title={
               geminiConnected
-                ? "Google Gemini 2.0 Flash is actively connected via GEMINI_API_KEY"
-                : "Simulator Mode: GEMINI_API_KEY is missing. Set key in environment to activate live API."
+                ? `Google ${modelName || "Gemini"} is actively verified and connected via GEMINI_API_KEY`
+                : "Simulator Mode: GEMINI_API_KEY is missing or unreachable. Set key in environment to activate live API."
             }
           >
             <span

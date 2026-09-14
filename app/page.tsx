@@ -11,6 +11,7 @@ export default function Home() {
   const [isGreenAIOpen, setIsGreenAIOpen] = useState(false);
   const [sosTriggered, setSosTriggered] = useState(false);
   const [geminiConnected, setGeminiConnected] = useState(false);
+  const [activeModel, setActiveModel] = useState("gemini-3.6-flash");
   const [greenAIStats, setGreenAIStats] = useState({
     retrievalLatencyMs: 1.8,
     tokensSavedEstimate: 1850,
@@ -25,12 +26,15 @@ export default function Home() {
     }
   }, [darkMode]);
 
-  // Check Gemini live status
+  // Check Gemini live status with actual API probe
   useEffect(() => {
     fetch("/api/status")
       .then((res) => res.json())
       .then((data) => {
-        setGeminiConnected(data.geminiConfigured);
+        setGeminiConnected(Boolean(data.geminiConnected));
+        if (data.model) {
+          setActiveModel(data.model);
+        }
       })
       .catch(() => {
         setGeminiConnected(false);
@@ -47,6 +51,7 @@ export default function Home() {
         onOpenGreenAI={() => setIsGreenAIOpen(true)}
         onTriggerSOS={() => setSosTriggered(true)}
         geminiConnected={geminiConnected}
+        modelName={activeModel}
       />
 
       <div className="flex-1 flex flex-col">
@@ -56,6 +61,7 @@ export default function Home() {
           onDismissSOS={() => setSosTriggered(false)}
           onUpdateGreenAIStats={(stats) => setGreenAIStats(stats)}
           geminiConnected={geminiConnected}
+          onLiveConnectionConfirmed={(live) => setGeminiConnected(live)}
         />
       </div>
 

@@ -83,21 +83,40 @@ export async function analyzeDocumentWithGemini(
   try {
     const apiKey = process.env.GEMINI_API_KEY!;
     const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-    const model = genAI.getGenerativeModel({ model: modelName });
-
+    const requestedModel = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+    
     // Strip any leading data:url prefix if present
     const cleanBase64 = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
 
-    const result = await model.generateContent([
-      DOCUMENT_EXTRACTION_PROMPT,
-      {
-        inlineData: {
-          data: cleanBase64,
-          mimeType: mimeType || "image/jpeg",
+    let result;
+    try {
+      const model = genAI.getGenerativeModel({ model: requestedModel });
+      result = await model.generateContent([
+        DOCUMENT_EXTRACTION_PROMPT,
+        {
+          inlineData: {
+            data: cleanBase64,
+            mimeType: mimeType || "image/jpeg",
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (modelErr: any) {
+      if (modelErr.message && (modelErr.message.includes("404") || modelErr.message.includes("not found")) && requestedModel !== "gemini-3.6-flash") {
+        console.warn(`Document analysis: model ${requestedModel} returned 404, retrying with gemini-3.6-flash...`);
+        const fallbackModel = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+        result = await fallbackModel.generateContent([
+          DOCUMENT_EXTRACTION_PROMPT,
+          {
+            inlineData: {
+              data: cleanBase64,
+              mimeType: mimeType || "image/jpeg",
+            },
+          },
+        ]);
+      } else {
+        throw modelErr;
+      }
+    }
 
     const responseText = result.response.text().trim();
     // Clean potential markdown blocks
