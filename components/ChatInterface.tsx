@@ -1,13 +1,27 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, AlertCircle, RotateCcw, Scale, Loader2, RefreshCw, Info } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  Send,
+  AlertCircle,
+  RotateCcw,
+  Scale,
+  Loader2,
+  RefreshCw,
+  Info,
+  Paperclip,
+  FileText,
+  Sparkles,
+} from "lucide-react";
 import { EmergencyBanner } from "./EmergencyBanner";
 import { ClarificationCard } from "./ClarificationCard";
 import { LegalGuidanceCard } from "./LegalGuidanceCard";
 import { EmptyState } from "./EmptyState";
+import { DocumentReviewModal } from "./DocumentReviewModal";
 import { EmergencyHelpline } from "@/data/legalKnowledge";
 import { ClarifyingQuestionItem } from "@/lib/clarificationEngine";
+import { ExtractedDocumentFacts } from "@/lib/documentAnalyzer";
 
 export interface ChatMessage {
   id: string;
@@ -26,6 +40,11 @@ export interface ChatMessage {
   draftTemplate?: { title: string; templateText: string };
   greenAIMetrics?: any;
   lastUserQuery?: string;
+  userQueryForGuidance?: string;
+  clarificationsForGuidance?: Record<string, string>;
+  stateJurisdiction?: string;
+  isFileUpload?: boolean;
+  fileName?: string;
 }
 
 interface ChatInterfaceProps {
@@ -50,8 +69,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [clarificationAnswers, setClarificationAnswers] = useState<Record<string, string>>({});
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState("");
 
+  // Document upload states
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [extractedFacts, setExtractedFacts] = useState<ExtractedDocumentFacts | null>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState("");
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,16 +85,115 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isUploadingDoc]);
 
-  const handleSendMessage = async (textToSend?: string, answersToPass?: Record<string, string>) => {
+  // Handle Document Upload & Multimodal Analysis
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so user can re-upload if desired
+    e.target.value = "";
+
+    setUploadedFileName(file.name);
+    setIsUploadingDoc(true);
+    setScreenReaderAnnouncement("Analyzing legal document with Gemini Multimodal AI...");
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+
+        try {
+          const res = await fetch("/api/analyze-document", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              base64Data,
+              mimeType: file.type,
+              fileName: file.name,
+              language,
+            }),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.message || "Failed to analyze uploaded document.");
+          }
+
+          const { data } = await res.json();
+          setExtractedFacts(data);
+          setIsReviewModalOpen(true);
+          setScreenReaderAnnouncement("Document facts extracted. Opening review modal.");
+        } catch (err: any) {
+          const errorMsg: ChatMessage = {
+            id: "err-upload-" + Date.now(),
+            role: "assistant",
+            content: `Document analysis failed: ${err.message || "Please check file format and try again."}`,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            type: "error",
+          };
+          setMessages((prev) => [...prev, errorMsg]);
+        } finally {
+          setIsUploadingDoc(false);
+        }
+      };
+
+      reader.onerror = () => {
+        setIsUploadingDoc(false);
+        alert("Failed to read file.");
+      };
+
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setIsUploadingDoc(false);
+    }
+  };
+
+  // When user confirms facts in DocumentReviewModal
+  const handleConfirmExtractedFacts = (facts: ExtractedDocumentFacts) => {
+    setIsReviewModalOpen(false);
+
+    // Merge auto-extracted clarifications
+    const mergedAnswers = {
+      ...clarificationAnswers,
+      ...facts.suggestedClarifications,
+    };
+    setClarificationAnswers(mergedAnswers);
+
+    if (facts.suggestedDomain && facts.suggestedDomain !== "OUT_OF_SCOPE") {
+      setActiveDomain(facts.suggestedDomain);
+    }
+
+    const timeString = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const userDocSummaryMsg: ChatMessage = {
+      id: "usr-doc-" + Date.now(),
+      role: "user",
+      content: `Uploaded Document: ${facts.documentType}\n• Summary: ${facts.summary}\n• Parties: ${facts.parties.issuerOrSender || "Issuer"} ➔ ${facts.parties.recipientOrSubject || "Client"}\n• Timeline: ${facts.noticePeriodDays || "Statutory notice window"}`,
+      timestamp: timeString,
+      isFileUpload: true,
+      fileName: uploadedFileName,
+    };
+
+    setMessages((prev) => [...prev, userDocSummaryMsg]);
+
+    // Send query with pre-filled context
+    const query = `Based on my uploaded ${facts.documentType}: "${facts.summary}". Please advise on my rights, legal steps, and remedies under Indian law.`;
+    handleSendMessage(query, mergedAnswers, facts.suggestedDomain);
+  };
+
+  const handleSendMessage = async (
+    textToSend?: string,
+    answersToPass?: Record<string, string>,
+    domainToPass?: string
+  ) => {
     const query = (textToSend || input).trim();
     if (!query || isLoading) return;
 
     const userMessageId = "msg-" + Date.now();
     const timeString = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-    // If sending standard user query
+    // If sending standard user query (not via clarification submit or doc confirm)
     if (!answersToPass) {
       const userMsg: ChatMessage = {
         id: userMessageId,
@@ -87,14 +212,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         : "Nyaya Sahayak is analyzing your legal query...";
     setScreenReaderAnnouncement(initialAnnouncement);
 
+    const currentClarifications = answersToPass || clarificationAnswers;
+    const currentDomain = domainToPass || activeDomain;
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: query,
-          domain: activeDomain,
-          clarifications: answersToPass || clarificationAnswers,
+          domain: currentDomain,
+          clarifications: currentClarifications,
           isClarificationAnswer: Boolean(answersToPass),
           language,
         }),
@@ -168,6 +296,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         type: "guidance",
         isStreaming: true,
+        userQueryForGuidance: query,
+        clarificationsForGuidance: currentClarifications,
+        stateJurisdiction: currentClarifications["state_jurisdiction"],
       };
 
       setMessages((prev) => [...prev, initialAssistantMsg]);
@@ -253,7 +384,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const errorMsg: ChatMessage = {
         id: "err-" + Date.now(),
         role: "assistant",
-        content: err.message || "Something went wrong reaching the assistant — please check connection and try again.",
+        content:
+          err.message ||
+          "Something went wrong reaching the assistant — please check connection and try again.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         type: "error",
         lastUserQuery: query,
@@ -301,7 +434,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="flex items-center gap-2">
             <Info className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <strong>Offline Simulator Active:</strong> Responses run locally. To enable live Google Gemini 2.0 Flash calls, configure <code className="font-mono text-[11px] bg-background/50 px-1 py-0.5 rounded">GEMINI_API_KEY</code>.
+              <strong>Offline Simulator Active:</strong> Responses run locally. To enable live Google
+              Gemini 2.0 Flash calls, configure{" "}
+              <code className="font-mono text-[11px] bg-background/50 px-1 py-0.5 rounded">
+                GEMINI_API_KEY
+              </code>
+              .
             </span>
           </div>
         </div>
@@ -320,6 +458,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         />
       )}
 
+      {/* Document Review Modal */}
+      <DocumentReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        onConfirm={handleConfirmExtractedFacts}
+        facts={extractedFacts}
+        fileName={uploadedFileName}
+        language={language}
+      />
+
+      {/* Hidden File Input for Document Upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/jpg,application/pdf"
+        className="hidden"
+        onChange={handleFileUpload}
+        aria-label="Upload legal document image or PDF"
+      />
+
       {/* Chat Messages Container */}
       <div
         className="flex-1 overflow-y-auto py-3 sm:py-4 space-y-3 sm:space-y-4 focus:outline-none"
@@ -330,7 +488,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <EmptyState onSelectPrompt={(p) => handleSendMessage(p)} language={language} />
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className="space-y-2.5">
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-2.5"
+            >
               {/* Emergency Helplines Card at top of message if triggered */}
               {msg.safetyHelplines && msg.safetyHelplines.length > 0 && (
                 <EmergencyBanner
@@ -391,6 +555,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       content={msg.content}
                       language={language}
                       isStreaming={msg.isStreaming}
+                      userQuery={msg.userQueryForGuidance}
+                      clarifications={msg.clarificationsForGuidance}
+                      stateJurisdiction={msg.stateJurisdiction}
                     />
                   ) : msg.type === "error" ? (
                     <div className="p-3 sm:p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 text-rose-700 dark:text-rose-400">
@@ -410,7 +577,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       )}
                     </div>
                   ) : (
-                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                    <div>
+                      {msg.isFileUpload && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/20 text-white text-[11px] font-semibold mb-2">
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Document Uploaded: {msg.fileName}</span>
+                        </div>
+                      )}
+                      <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                    </div>
                   )}
 
                   {/* Timestamp for user message */}
@@ -421,25 +596,68 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
 
-        {/* Loading Spinner */}
+        {/* Shimmering Skeleton Loader while retrieving/generating */}
         {isLoading && (
-          <div className="flex items-center gap-2 sm:gap-3 text-muted-foreground text-xs py-1.5">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-2 sm:gap-3 justify-start py-1.5"
+          >
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-1">
               <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
             </div>
-            <div className="flex items-center gap-2 p-2.5 sm:p-3 rounded-xl border border-border bg-card">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-              <span>
-                {language === "hi"
-                  ? "कानूनी धाराओं एवं संदर्भ का विश्लेषण हो रहा है..."
-                  : "Analyzing legal statutes & synthesizing procedural steps..."}
-              </span>
+
+            <div className="max-w-[90%] sm:max-w-[80%] md:max-w-[75%] w-full rounded-2xl rounded-bl-none p-3.5 sm:p-4 bg-card border border-border space-y-3 shadow-sm">
+              {/* Shimmer header */}
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-32 bg-indigo-500/15 rounded animate-pulse" />
+                <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+              </div>
+
+              {/* Shimmer pills for statutes */}
+              <div className="flex gap-1.5">
+                <div className="h-5 w-24 bg-indigo-500/10 rounded-md animate-pulse" />
+                <div className="h-5 w-28 bg-indigo-500/10 rounded-md animate-pulse" />
+                <div className="h-5 w-20 bg-indigo-500/10 rounded-md animate-pulse" />
+              </div>
+
+              {/* Shimmer content lines */}
+              <div className="space-y-2 pt-1">
+                <div className="h-3.5 w-4/5 bg-muted rounded animate-pulse" />
+                <div className="h-3 w-full bg-muted/70 rounded animate-pulse" />
+                <div className="h-3 w-11/12 bg-muted/70 rounded animate-pulse" />
+                <div className="h-3 w-3/4 bg-muted/60 rounded animate-pulse" />
+              </div>
+
+              <div className="pt-2 flex items-center gap-2 text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
+                <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                <span>
+                  {language === "hi"
+                    ? "कानूनी धाराओं एवं संदर्भ का विश्लेषण हो रहा है..."
+                    : "Synthesizing statutory citations & procedural roadmap..."}
+                </span>
+              </div>
             </div>
-          </div>
+          </motion.div>
+        )}
+
+        {/* Document analyzing indicator */}
+        {isUploadingDoc && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2.5 p-3 rounded-xl border border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-950/20 text-xs text-indigo-900 dark:text-indigo-200"
+          >
+            <Loader2 className="w-4 h-4 animate-spin text-indigo-600 shrink-0" />
+            <span>
+              Reading & extracting key legal facts from <strong>{uploadedFileName}</strong> with Gemini
+              multimodal AI...
+            </span>
+          </motion.div>
         )}
 
         <div ref={messagesEndRef} />
@@ -454,6 +672,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }}
           className="relative flex items-center rounded-2xl border border-border bg-card shadow-sm p-1.5 sm:p-2 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all duration-200"
         >
+          {/* Upload Button (📎) */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || isUploadingDoc}
+            className="p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-indigo-600 hover:bg-indigo-500/10 hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 shrink-0"
+            title="Upload photo or PDF of notice, agreement, or bill"
+            aria-label="Upload legal document"
+          >
+            <Paperclip className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+          </button>
+
           <textarea
             ref={inputRef}
             rows={1}
@@ -467,11 +697,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             }}
             placeholder={
               language === "hi"
-                ? "अपनी कानूनी समस्या लिखें (उदा. मकान मालिक, साइबर फ्रॉड)..."
-                : "Describe your legal issue (e.g. landlord eviction, cyber fraud, defective goods)..."
+                ? "अपनी कानूनी समस्या लिखें या नोटिस/समझौता अपलोड करें (📎)..."
+                : "Describe your legal issue or attach notice/agreement (📎)..."
             }
             className="flex-1 resize-none bg-transparent px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none max-h-28"
-            disabled={isLoading}
+            disabled={isLoading || isUploadingDoc}
             aria-label="Legal issue description"
           />
 
@@ -490,7 +720,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             <button
               type="submit"
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || isUploadingDoc}
               className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-150 shadow-sm shadow-indigo-600/30 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               aria-label="Send query"
               title="Send legal issue query"
@@ -504,7 +734,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <span>
             {language === "hi"
               ? "विधिक सहायता सूचनात्मक है • आपातकाल में 112 डायल करें"
-              : "Informational assistance • Dial 112 for immediate emergencies"}
+              : "Attach photo/PDF notice with 📎 • Dial 112 for immediate emergencies"}
           </span>
           <span className="hidden sm:inline">
             Press <strong>Enter</strong> to send

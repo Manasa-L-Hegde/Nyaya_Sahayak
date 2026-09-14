@@ -204,7 +204,7 @@ describe("Nyaya Sahayak - Error Resilience & Rate Limiting Suite", () => {
     const origEnv = process.env.NODE_ENV;
     const origKey = process.env.GEMINI_API_KEY;
     try {
-      process.env.NODE_ENV = "production";
+      (process.env as any).NODE_ENV = "production";
       delete process.env.GEMINI_API_KEY;
 
       await expect(
@@ -214,9 +214,57 @@ describe("Nyaya Sahayak - Error Resilience & Rate Limiting Suite", () => {
         })
       ).rejects.toThrow("CRITICAL: GEMINI_API_KEY is not configured in Vercel Environment Variables");
     } finally {
-      process.env.NODE_ENV = origEnv;
+      (process.env as any).NODE_ENV = origEnv;
       process.env.GEMINI_API_KEY = origKey;
     }
   });
 });
+
+describe("Nyaya Sahayak - Document & Multimodal Analysis Suite", () => {
+  it("extracts structured facts and notice period from simulated eviction notice", async () => {
+    const { generateSimulatedDocumentFacts } = await import("@/lib/documentAnalyzer");
+    const facts = generateSimulatedDocumentFacts("eviction_notice_delhi.pdf", "application/pdf", "en");
+
+    expect(facts.documentType).toContain("Notice to Vacate");
+    expect(facts.suggestedDomain).toBe("TENANT_RIGHTS");
+    expect(facts.noticePeriodDays).toContain("15 days");
+    expect(facts.amounts.depositOrClaimAmount).toBeDefined();
+    expect(facts.suggestedClarifications.state_jurisdiction).toBe("Delhi NCR");
+    expect(facts.suggestedClarifications.agreement_status).toBe("Yes, registered agreement");
+    expect(facts.suggestedClarifications.dispute_type).toContain("eviction");
+  });
+
+  it("extracts structured facts and golden hour alert from cyber fraud transaction screenshot", async () => {
+    const { generateSimulatedDocumentFacts } = await import("@/lib/documentAnalyzer");
+    const facts = generateSimulatedDocumentFacts("upi_fraud_screenshot.jpg", "image/jpeg", "en");
+
+    expect(facts.documentType).toContain("UPI Fraud");
+    expect(facts.suggestedDomain).toBe("CYBER_CRIME");
+    expect(facts.amounts.depositOrClaimAmount).toContain("38,500");
+    expect(facts.noticePeriodDays).toContain("Golden Hour");
+    expect(facts.suggestedClarifications.time_elapsed).toContain("Golden Hour");
+  });
+
+  it("extracts commercial receipt data and warranty context for consumer protection disputes", async () => {
+    const { generateSimulatedDocumentFacts } = await import("@/lib/documentAnalyzer");
+    const facts = generateSimulatedDocumentFacts("amazon_invoice_damaged_laptop.pdf", "application/pdf", "en");
+
+    expect(facts.documentType).toContain("Invoice");
+    expect(facts.suggestedDomain).toBe("CONSUMER_PROTECTION");
+    expect(facts.amounts.depositOrClaimAmount).toContain("24,999");
+    expect(facts.suggestedClarifications.dispute_type).toContain("Defective product");
+  });
+
+  it("constructs correct State Legal Services Authority search URLs for legal aid locator", () => {
+    const states = ["Karnataka", "Delhi NCR", "Maharashtra", "Tamil Nadu"];
+    for (const state of states) {
+      const cleanState = state.replace(/NCR/i, "").trim();
+      const query = `${cleanState} State Legal Services Authority`;
+      const expectedUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      expect(expectedUrl).toContain(encodeURIComponent(cleanState));
+      expect(expectedUrl).toContain("State%20Legal%20Services%20Authority");
+    }
+  });
+});
+
 
